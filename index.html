@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>jasa.fun</title>
+    <!-- Incluyendo la fuente Inter desde Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos personalizados, no de Tailwind */
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.5s, color 0.5s;
+        }
+
+        /* Animación del fondo con degradado para modo oscuro */
+        body[data-theme="dark"] {
+            color: white;
+            background: linear-gradient(-45deg, #1a202c, #2d3748, #3b4453, #4a5568);
+            background-size: 400% 400%;
+            animation: gradient-animation-dark 15s ease infinite;
+        }
+
+        @keyframes gradient-animation-dark {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Animación del fondo con degradado para modo claro */
+        body[data-theme="light"] {
+            color: #1a202c;
+            background: linear-gradient(-45deg, #f3f4f6, #e5e7eb, #d1d5db, #d1d5db);
+            background-size: 400% 400%;
+            animation: gradient-animation-light 15s ease infinite;
+        }
+
+        @keyframes gradient-animation-light {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Estilo de la barra de progreso */
+        .progress-bar-fill {
+            transition: width 0.1s ease-in-out;
+        }
+
+        /* Estilos de la tarjeta para ambos modos */
+        .card {
+            transition: background-color 0.5s, box-shadow 0.5s;
+        }
+
+        body[data-theme="dark"] .card {
+            background-color: #1f2937;
+            color: white;
+        }
+
+        body[data-theme="light"] .card {
+            background-color: #f3f4f6;
+            color: #1a202c;
+        }
+
+        body[data-theme="dark"] .app-container {
+            background-color: rgba(31, 41, 55, 0.8);
+        }
+
+        body[data-theme="light"] .app-container {
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Estilos de los botones de modo */
+        #theme-toggle {
+            transition: transform 0.3s;
+        }
+
+        #theme-toggle:hover {
+            transform: scale(1.1);
+        }
+        
+        /* Contenedor del lienzo para el juego de dibujo */
+        #drawing-game-page .drawing-container {
+            position: relative;
+            background-color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Contenedor del canvas para asegurar que los eventos de clic funcionan */
+        #canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Estilo del lienzo de dibujo */
+        #drawing-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+            touch-action: none;
+            background-color: transparent;
+        }
+
+        /* Estilo para el punto blanco central */
+        .center-dot {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: white;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20; /* Para asegurar que está sobre el canvas */
+        }
+
+        /* Estilo para las líneas de fondo animadas */
+        .background-lines {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+        }
+
+        .animated-line {
+            position: absolute;
+            border-radius: 50%;
+            animation-name: growAndFade;
+            animation-duration: 4s;
+            animation-iteration-count: infinite;
+            animation-timing-function: linear;
+        }
+        
+        @keyframes growAndFade {
+            0% {
+                transform: scale(0.1);
+                opacity: 0;
+            }
+            20% {
+                opacity: 1;
+            }
+            80% {
+                opacity: 0.2;
+            }
+            100% {
+                transform: scale(1.2);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 animated-gradient-background">
+
+    <!-- Contenedor principal de la aplicación -->
+    <div id="app-container" class="app-container w-full max-w-5xl p-8 rounded-2xl shadow-lg backdrop-filter backdrop-blur-lg">
+
+        <!-- Página del Menú (visible por defecto) -->
+        <div id="menu-page">
+            <!-- Título y logo -->
+            <header class="text-center mb-10">
+                <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-teal-500">
+                    jasa.fun
+                </h1>
+                <p class="text-sm mt-2 text-gray-400">juegos y cosas por Neal</p>
+            </header>
+
+            <!-- Contenedor de la cuadrícula de juegos -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+
+                <!-- Enlace/Tarjeta para el juego 1 (Barras de Progreso) -->
+                <a href="#" onclick="showPage('game-page')" id="game-1" class="group card block w-full rounded-xl shadow-md overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                    <!-- Contenedor del ícono -->
+                    <div class="p-4 flex flex-col items-center justify-center">
+                        <div class="h-40 w-full flex items-center justify-center">
+                            <svg class="w-full h-full text-green-500 drop-shadow-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50" preserveAspectRatio="xMidYMid meet">
+                                <defs>
+                                    <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" style="stop-color:#4ade80;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#22d3ee;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <rect x="5" y="15" width="90" height="20" rx="10" ry="10" fill="#d1d5db" />
+                                <rect x="5" y="15" width="65" height="20" rx="10" ry="10" fill="url(#progressGradient)" />
+                                <text x="50" y="27" font-family="Inter, sans-serif" font-size="10" font-weight="bold" fill="#ffffff" text-anchor="middle" alignment-baseline="middle">
+                                    65%
+                                </text>
+                                <text x="50" y="10" font-family="Inter, sans-serif" font-size="6" font-weight="bold" fill="#374151" text-anchor="middle" letter-spacing="0.5">
+                                    Progress
+                                </text>
+                            </svg>
+                        </div>
+                        <h3 class="mt-4 text-xl font-bold text-center">
+                            Barras de Progreso
+                        </h3>
+                    </div>
+                </a>
+
+                <!-- Enlace/Tarjeta para el juego 2 (Círculo Perfecto) -->
+                <a href="#" onclick="showPage('drawing-game-page')" id="game-2" class="group card block w-full rounded-xl shadow-md overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+                    <div class="p-4 flex flex-col items-center justify-center">
+                        <div class="h-40 w-full flex items-center justify-center">
+                            <svg class="w-full h-full text-blue-500 drop-shadow-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                                <!-- Línea de fondo tenue -->
+                                <circle cx="50" cy="50" r="40" stroke="#d1d5db" stroke-width="2" fill="none" />
+                                <!-- Círculo de línea de puntos -->
+                                <circle cx="50" cy="50" r="40" stroke="#60a5fa" stroke-width="2" stroke-dasharray="2" fill="none" />
+                                <!-- Trazo de un círculo dibujado a mano -->
+                                <path d="M 50 10 C 70 15, 85 40, 80 60 C 75 80, 50 85, 30 70 C 10 55, 15 25, 45 10" stroke="#3b82f6" stroke-width="3" fill="none" stroke-linecap="round" />
+                                <!-- Mano dibujando -->
+                                <path d="M 50 10 L 45 10 M 50 10 L 52 13 L 55 12 Z" fill="#3b82f6" stroke="none" />
+                            </svg>
+                        </div>
+                        <h3 class="mt-4 text-xl font-bold text-center">
+                            Hacer un Círculo Perfecto
+                        </h3>
+                    </div>
+                </a>
+                
+            </div>
+
+            <!-- Mensaje de pie de página -->
+            <div class="mt-10 text-center text-gray-400">
+                <p>Selecciona un juego para comenzar la aventura.</p>
+            </div>
+        </div>
+
+        <!-- Página del Juego de Barras de Progreso (oculta por defecto) -->
+        <div id="game-page" class="hidden">
+            <div class="flex justify-between items-center mb-6">
+                <!-- Botón para volver al menú -->
+                <button onclick="showPage('menu-page')" class="py-2 px-4 rounded-full bg-blue-500 hover:bg-blue-600 transition-colors duration-300 text-white font-semibold">
+                    ← Volver al Menú
+                </button>
+                <div class="flex items-center space-x-2">
+                    <!-- Selector de idioma -->
+                    <select id="language-selector" class="bg-gray-700 dark:bg-gray-700 text-white rounded-md p-2">
+                        <option value="es">Español</option>
+                        <option value="en">English</option>
+                    </select>
+                    <!-- Botón de modo claro/oscuro -->
+                    <button id="theme-toggle" class="p-2 rounded-full text-white bg-gray-700 dark:bg-gray-700 hover:bg-gray-600 dark:hover:bg-gray-600">
+                        <span id="theme-icon">☀️</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Título de la aplicación -->
+            <h1 id="game-title" class="text-4xl sm:text-5xl font-bold text-center mb-10 text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-500">
+                ⏳ Barras de Progreso
+            </h1>
+
+            <!-- Contenedor para las barras de progreso -->
+            <div id="progress-container" class="space-y-6">
+                <!-- Aquí se insertarán las barras de progreso dinámicamente -->
+            </div>
+        </div>
+        
+        <!-- Página del Juego de Círculos (oculta por defecto) -->
+        <div id="drawing-game-page" class="hidden">
+            <div class="drawing-container">
+                <!-- Contenedor para las líneas de fondo animadas -->
+                <div id="background-lines" class="background-lines"></div>
+                
+                <!-- Contenedor del canvas para que los eventos de clic funcionen -->
+                <div id="canvas-wrapper">
+                    <!-- Lienzo para dibujar, inicialmente oculto -->
+                    <canvas id="drawing-canvas" class="hidden"></canvas>
+                </div>
+
+                <!-- El punto blanco central, que actúa como eje visual (se ha movido fuera del canvas-wrapper) -->
+                <div class="center-dot hidden"></div>
+
+                <!-- Contenedor para el score y los botones del juego real (inicialmente ocultos) -->
+                <div id="drawing-game-play" class="absolute inset-0 hidden flex flex-col items-center justify-center pointer-events-none">
+                    <p id="drawing-score" class="text-6xl font-bold text-green-400 drop-shadow-lg pointer-events-auto">0%</p>
+                    <p id="drawing-message" class="text-xl font-semibold text-white mt-4 pointer-events-auto"></p>
+                </div>
+
+                <!-- Contenedor principal del juego -->
+                <div id="start-screen" class="absolute inset-0 flex flex-col items-center justify-center w-full h-full z-10">
+                    <h1 class="text-white text-4xl sm:text-5xl font-bold text-center mb-4">
+                        Can you draw a<br>PERFECT CIRCLE?
+                    </h1>
+                    <button id="start-drawing-button" class="mt-8 py-4 px-10 rounded-full bg-white text-black font-bold text-xl hover:bg-gray-200 transition-colors duration-200 shadow-lg">
+                        GO
+                    </button>
+                </div>
+            </div>
+
+            <!-- Contenedor para los botones de la página de dibujo -->
+            <div class="flex justify-between items-center mt-6">
+                <button onclick="showPage('menu-page')" class="py-2 px-4 rounded-full bg-blue-500 hover:bg-blue-600 transition-colors duration-300 text-white font-semibold">
+                    ← Volver al Menú
+                </button>
+                <div class="flex items-center space-x-2">
+                    <select id="language-selector-drawing" class="bg-gray-700 text-white rounded-md p-2">
+                        <option value="es">Español</option>
+                        <option value="en">English</option>
+                    </select>
+                    <button id="theme-toggle-drawing" class="p-2 rounded-full text-white bg-gray-700 hover:bg-gray-600">
+                        <span id="theme-icon-drawing">☀️</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pie de página con derechos de autor -->
+    <footer class="mt-8 mb-4 w-full max-w-5xl text-center text-sm text-gray-400">
+        <p>&copy; 2024 jasa.fun. Todos los derechos reservados.</p>
+    </footer>
+
+    <script>
+        // Función para mostrar la página deseada y ocultar las demás
+        function showPage(pageId) {
+            document.getElementById('menu-page').classList.add('hidden');
+            document.getElementById('game-page').classList.add('hidden');
+            document.getElementById('drawing-game-page').classList.add('hidden');
+            document.getElementById(pageId).classList.remove('hidden');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const progressContainer = document.getElementById('progress-container');
+            const languageSelector = document.getElementById('language-selector');
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIcon = document.getElementById('theme-icon');
+            const body = document.body;
+            let currentLang = 'es';
+
+            // Seleccionadores de idioma y tema para la página de dibujo
+            const languageSelectorDrawing = document.getElementById('language-selector-drawing');
+            const themeToggleDrawing = document.getElementById('theme-toggle-drawing');
+            const themeIconDrawing = document.getElementById('theme-icon-drawing');
+            
+            // Elementos de la página de inicio del juego de círculo
+            const startDrawingButton = document.getElementById('start-drawing-button');
+            const startScreen = document.getElementById('start-screen');
+            const drawingGamePlay = document.getElementById('drawing-game-play');
+            const drawingCanvas = document.getElementById('drawing-canvas');
+            const scoreElement = document.getElementById('drawing-score');
+            const messageElement = document.getElementById('drawing-message');
+            const backgroundLinesContainer = document.getElementById('background-lines');
+            const centerDot = document.querySelector('.center-dot');
+
+            // Objeto de localización para los textos con emojis
+            const locales = {
+                es: {
+                    gameTitle: '⏳ Barras de Progreso',
+                    drawingTitle: '⚪ Hacer un Círculo Perfecto',
+                    titles: {
+                        nextMinute: '🕑 Próximo Minuto',
+                        nextHour: '🕒 Próxima Hora',
+                        nextDay: '🌅 Próximo Día',
+                        nextMonth: '📅 Próximo Mes',
+                        nextYear: '🎆 Próximo Año',
+                        nextDecade: '🗓️ Próxima Década',
+                        nextCentury: '🏛️ Próximo Siglo',
+                        nextMillennium: '🌌 Próximo Milenio',
+                        nextValentinesDay: '❤️ Próximo Día de San Valentín',
+                        nextStPatricksDay: '🍀 Próximo Día de San Patricio',
+                        nextEaster: '🐇 Próxima Pascua',
+                        nextMothersDay: '👩 Próximo Día de la Madre',
+                        nextFathersDay: '👨 Próximo Día del Padre',
+                        nextHalloween: '👻 Próximo Halloween',
+                        nextThanksgiving: '🦃 Próximo Día de Acción de Gracias',
+                        nextChristmas: '🎅 Próxima Navidad',
+                        halleyComet: '☄️ Regreso del Cometa Halley',
+                        chernobylSafe: '🏭 Chernobyl es seguro de nuevo',
+                        voyagerReachesOort: '🛰️ Voyager 1 llega a la Nube de Oort',
+                        milkyWayCollision: '💥 Colisión Vía Láctea y Andrómeda',
+                        sunDies: '☀️ El Sol Muere',
+                        heatDeath: '🥶 Muerte Térmica del Universo',
+                        nextNewMoon: '🌑 Próxima Luna Nueva',
+                        nextWaxingCrescent: '🌒 Próxima Creciente Cóncava',
+                        nextFirstQuarter: '🌓 Próximo Cuarto Creciente',
+                        nextWaxingGibbous: '🌔 Próxima Gibosa Creciente',
+                        nextFullMoon: '🌕 Próxima Luna Llena',
+                        nextWaningGibbous: '🌖 Próxima Gibosa Menguante',
+                        nextLastQuarter: '🌗 Próximo Cuarto Menguante',
+                        nextWaningCrescent: '🌘 Próxima Menguante Cóncava',
+                    },
+                    units: {
+                        seconds: 'segundos',
+                        minutes: 'minutos',
+                        hours: 'horas',
+                        days: 'días',
+                        years: 'años',
+                        centuries: 'siglos',
+                        millennia: 'milenios',
+                        billions: 'billones'
+                    },
+                    drawing: {
+                        instructions: 'Dibuja un círculo con el mouse o el dedo',
+                        scorePrefix: 'Perfección: ',
+                        messages: {
+                            excellent: '¡Excelente!',
+                            great: '¡Genial!',
+                            good: 'Buen intento',
+                            fair: 'Necesitas más práctica',
+                            poor: '¡Inténtalo de nuevo!'
+                        }
+                    }
+                },
+                en: {
+                    gameTitle: '⏳ Progress Bars',
+                    drawingTitle: '⚪ Make a Perfect Circle',
+                    titles: {
+                        nextMinute: '🕑 Next Minute',
+                        nextHour: '🕒 Next Hour',
+                        nextDay: '🌅 Next Day',
+                        nextMonth: '📅 Next Month',
+                        nextYear: '🎆 Next Year',
+                        nextDecade: '🗓️ Next Decade',
+                        nextCentury: '🏛️ Next Century',
+                        nextMillennium: '🌌 Next Millennium',
+                        nextValentinesDay: '❤️ Next Valentine\'s Day',
+                        nextStPatricksDay: '🍀 Next Saint Patrick\'s Day',
+                        nextEaster: '🐇 Next Easter',
+                        nextMothersDay: '👩 Next Mother\'s Day',
+                        nextFathersDay: '👨 Next Father\'s Day',
+                        nextHalloween: '👻 Next Halloween',
+                        nextThanksgiving: '🦃 Next Thanksgiving',
+                        nextChristmas: '🎅 Next Christmas',
+                        halleyComet: '☄️ Halley\'s Comet returns',
+                        chernobylSafe: '🏭 Chernobyl is fully safe again',
+                        voyagerReachesOort: '🛰️ Voyager 1 reaches the Oort Cloud',
+                        milkyWayCollision: '💥 Milky Way collides with Andromeda',
+                        sunDies: '☀️ The Sun Dies',
+                        heatDeath: '🥶 Heat Death of the Universe',
+                        nextNewMoon: '🌑 Next New Moon',
+                        nextWaxingCrescent: '🌒 Next Waxing Crescent',
+                        nextFirstQuarter: '🌓 Next First Quarter',
+                        nextWaxingGibbous: '🌔 Next Waxing Gibbous',
+                        nextFullMoon: '🌕 Next Full Moon',
+                        nextWaningGibbous: '🌖 Next Waning Gibbous',
+                        nextLastQuarter: '🌗 Next Last Quarter',
+                        nextWaningCrescent: '🌘 Next Waning Crescent',
+                    },
+                    units: {
+                        seconds: 'seconds',
+                        minutes: 'minutes',
+                        hours: 'hours',
+                        days: 'days',
+                        years: 'years',
+                        centuries: 'centuries',
+                        millennia: 'millennia',
+                        billions: 'billions'
+                    },
+                    drawing: {
+                        instructions: 'Draw a circle with your mouse or finger',
+                        scorePrefix: 'Perfection: ',
+                        messages: {
+                            excellent: 'Excellent!',
+                            great: 'Great!',
+                            good: 'Good attempt',
+                            fair: 'Needs more practice',
+                            poor: 'Try again!'
+                        }
+                    }
+                }
+            };
+
+            // Función para cambiar la visualización del idioma
+            function setLanguage(lang) {
+                currentLang = lang;
+                const texts = locales[lang];
+                document.getElementById('game-title').textContent = texts.gameTitle;
+                
+                // Actualiza los títulos de las barras de progreso
+                progressItems.forEach(item => {
+                    const titleElement = document.getElementById(`progress-${item.id}`).querySelector('.progress-title');
+                    titleElement.textContent = texts.titles[item.id] || item.title;
+                });
+                
+                // Actualiza los botones de la página de dibujo
+                document.getElementById('drawing-score').textContent = `0%`; // Resetear el texto
+                document.getElementById('drawing-message').textContent = '';
+
+                // Vuelve a actualizar las barras para refrescar la unidad de tiempo
+                updateProgressBars();
+            }
+
+            // Función para cambiar el tema claro/oscuro
+            function setTheme(theme) {
+                if (theme === 'dark') {
+                    body.setAttribute('data-theme', 'dark');
+                    themeIcon.textContent = '☀️';
+                    themeIconDrawing.textContent = '☀️';
+                } else {
+                    body.setAttribute('data-theme', 'light');
+                    themeIcon.textContent = '🌙';
+                    themeIconDrawing.textContent = '🌙';
+                }
+            }
+
+            // Escucha el cambio en el selector de idioma para ambas páginas
+            languageSelector.addEventListener('change', (event) => {
+                setLanguage(event.target.value);
+            });
+            languageSelectorDrawing.addEventListener('change', (event) => {
+                setLanguage(event.target.value);
+            });
+
+
+            // Escucha el clic en el botón de modo claro/oscuro para ambas páginas
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = body.getAttribute('data-theme');
+                setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+            });
+            themeToggleDrawing.addEventListener('click', () => {
+                const currentTheme = body.getAttribute('data-theme');
+                setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+            });
+
+            // Lógica del juego de barras de progreso
+            // Función para calcular la fecha del próximo evento anual (para días festivos)
+            function getNextAnnualDate(month, day) {
+                const now = new Date();
+                let eventDate = new Date(now.getFullYear(), month, day);
+                if (now > eventDate) {
+                    eventDate.setFullYear(now.getFullYear() + 1);
+                }
+                return eventDate;
+            }
+            
+            // Función para calcular la fecha de la próxima Pascua (basado en el algoritmo de Gauss)
+            function getNextEasterDate(year) {
+                const a = year % 19;
+                const b = Math.floor(year / 100);
+                const c = year % 100;
+                const d = Math.floor(b / 4);
+                const e = b % 4;
+                const f = Math.floor((b + 8) / 25);
+                const g = Math.floor((b - f + 1) / 3);
+                const h = (19 * a + b - d - g + 15) % 30;
+                const i = Math.floor(c / 4);
+                const k = c % 4;
+                const l = (32 + 2 * e + 2 * i - h - k) % 7;
+                const m = Math.floor((a + 11 * h + 22 * l) / 451);
+                const month = Math.floor((h + l - 7 * m + 114) / 31);
+                const day = ((h + l - 7 * m + 114) % 31) + 1;
+                return new Date(year, month - 1, day);
+            }
+
+            // Función para obtener la fecha de la próxima Pascua
+            function getNextEaster() {
+                const now = new Date();
+                let year = now.getFullYear();
+                let easterDate = getNextEasterDate(year);
+                if (now > easterDate) {
+                    easterDate = getNextEasterDate(year + 1);
+                }
+                return easterDate;
+            }
+
+            // Estructura de las barras de progreso, con sus datos y lógica de cálculo
+            const progressItems = [
+                { id: 'nextMinute', calculateProgress: (now) => ({ 
+                    progress: (now.getSeconds() + now.getMilliseconds() / 1000) / 60 * 100, 
+                    value: (60 - (now.getSeconds() + now.getMilliseconds() / 1000)).toFixed(2), 
+                    unit: 'seconds',
+                    color: '#fca5a5'
+                })},
+                { id: 'nextHour', calculateProgress: (now) => ({ 
+                    progress: (now.getMinutes() + now.getSeconds() / 60) / 60 * 100, 
+                    value: (60 - (now.getMinutes() + now.getSeconds() / 60)).toFixed(2), 
+                    unit: 'minutes',
+                    color: '#fcd34d'
+                })},
+                { id: 'nextDay', calculateProgress: (now) => ({ 
+                    progress: (now.getHours() + now.getMinutes() / 60) / 24 * 100, 
+                    value: (24 - (now.getHours() + now.getMinutes() / 60)).toFixed(2), 
+                    unit: 'hours',
+                    color: '#86efac'
+                })},
+                { id: 'nextMonth', calculateProgress: (now) => {
+                    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+                    const daysPassedMonth = now.getDate() + now.getHours() / 24;
+                    return {
+                        progress: (daysPassedMonth / daysInMonth) * 100,
+                        value: (daysInMonth - daysPassedMonth).toFixed(2),
+                        unit: 'days',
+                        color: '#93c5fd'
+                    };
+                }},
+                { id: 'nextYear', calculateProgress: (now) => {
+                    const startOfYear = new Date(now.getFullYear(), 0, 1);
+                    const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
+                    const totalDaysInYear = (endOfYear - startOfYear) / (1000 * 60 * 60 * 24);
+                    const daysPassedYear = (now - startOfYear) / (1000 * 60 * 60 * 24);
+                    return {
+                        progress: (daysPassedYear / totalDaysInYear) * 100,
+                        value: (totalDaysInYear - daysPassedYear).toFixed(2),
+                        unit: 'days',
+                        color: '#c4b5fd'
+                    };
+                }},
+                // Eventos anuales
+                { id: 'nextValentinesDay', calculateProgress: (now) => {
+                    const eventDate = getNextAnnualDate(1, 14); // Mes 1 es Febrero
+                    const daysLeft = (eventDate - now) / (1000 * 60 * 60 * 24);
+                    const progress = (1 - daysLeft / 365.25) * 100;
+                    return { progress: progress, value: daysLeft.toFixed(0), unit: 'days', color: '#f87171' };
+                }},
+                { id: 'nextStPatricksDay', calculateProgress: (now) => {
+                    const eventDate = getNextAnnualDate(2, 17); // Mes 2 es Marzo
+                    const daysLeft = (eventDate - now) / (1000 * 60 * 60 * 24);
+                    const progress = (1 - daysLeft / 365.25) * 100;
+                    return { progress: progress, value: daysLeft.toFixed(0), unit: 'days', color: '#34d399' };
+                }},
+                { id: 'nextEaster', calculateProgress: (now) => {
+                    const eventDate = getNextEaster();
+                    const daysLeft = (eventDate - now) / (1000 * 60 * 60 * 24);
+                    const progress = (1 - daysLeft / 365.25) * 100;
+                    return { progress: progress, value: daysLeft.toFixed(0), unit: 'days', color: '#facc15' };
+                }},
+                { id: 'nextMothersDay', calculateProgress: (now) => {
+                    const nowYear = now.getFullYear();
+                    const firstSundayInMay = new Date(nowYear, 4, 1);
+                    firstSundayInMay.setDate(1 + (7 - firstSundayInMay.getDay()) % 7);
+                    const secondSundayInMay = new Date(firstSundayInMay.getFullYear(), firstSundayInMay.getMonth(), firstSundayInMay.getDate() + 7);
+                    let eventDate = secondSundayInMay;
+                    if(now > eventDate) {
+                        const nextYear = now.getFullYear() + 1;
+                        const nextFirstSundayInMay = new Date(nextYear, 4, 1);
+                        nextFirstSundayInMay.setDate(1 + (7 - nextFirstSundayInMay.getDay()) % 7);
+                        eventDate = new Date(nextFirstSundayInMay.getFullYear(), nextFirstSundayInMay.getMonth(), nextFirstSundayInMay.getDate() + 7);
+                    }
+                    const daysLeft = (eventDate - now) / (1000 * 60 * 60 * 24);
+                    const progress = (1 - daysLeft / 365.25) * 100;
+                    return { progress: progress, value: daysLeft.toFixed(0), unit: 'days', color: '#f472b6' };
+                }},
+                { id: 'nextFathersDay', calculateProgress: (now) => {
+                    const nowYear = now.getFullYear();
+                    const firstSundayInJune = new Date(nowYear, 5, 1);
+                    firstSundayInJune.setDate(1 + (7 - firstSundayInJune.getDay()) % 7);
+                    const thirdSundayInJune = new Date(firstSundayInJune.getFullYear(), firstSundayInJune.getMonth(), firstSundayInJune.getDate() + 14);
+                    let eventDate = thirdSundayInJune;
+                    if(now > eventDate) {
+                        const nextYear = now.getFullYear() + 1;
+                        const nextFirstSundayInJune = new Date(nextYear, 5, 1);
+                        nextFirstSundayInJune.setDate(1 + (7 - nextFirstSundayInJune.getDay()) % 7);
+                        eventDate = new Date(nextFirstSundayInJune.getFullYear(), nextFirstSundayInJune.getMonth(), nextFirstSundayInJune.getDate() + 14);
+                    }
+                    const daysLeft = (eventDate - now) / (1000 * 60 * 60 * 24);
+                    const progress = (1 - daysLeft / 365.25) * 100;
+                    return { progress: progress, value: daysLeft.toFixed(0), unit: 'days', color: '#60a5fa' };
+                }},
+                { id: 'nextHalloween', calculateProgress: (now) => {
+                    const eventDate = getNextAnnualDate(9, 31); // Mes 9 es Octubre
+                    const daysLeft = (eventDate - now) / (1000 * 60 * 60 * 24);
+                    const progress = (1 - daysLeft / 365.25) * 100;
+                    return { progress: progress, value: daysLeft.toFixed(0), unit: 'days', color: '#f97316' };
+                }},
+                { id: 'nextThanksgiving', calculateProgress: (now) => {
+                    const nowYear = now.getFullYear();
+                    const firstThursdayInNov = new Date(nowYear, 10, 1);
+                    firstThursdayInNov.setDate(1 + (11 - firstThursdayInNov.getDay()) % 7);
+                    const fourthThursdayInNov = new Date(firstThursdayInNov.getFullYear(), firstThursdayInNov.getMonth(), firstThursdayInNov.getDate() + 21);
+                    let eventDate = fourthThursdayInNov;
+                    if(now > eventDate) {
+                        const nextYear = now.getFullYear() + 1;
+                        const nextFirstThursdayInNov = new Date(nextYear, 10, 1);
+                        nextFirstThursdayInNov.setDate(1 + (11 - nextFirstThursdayInNov.getDay()) % 7);
+                        eventDate = new Date(nextFirstThursdayInNov.getFullYear(), nextFirstThursdayInNov.getMonth(), nextFirstThursdayInNov.getDate() + 21);
+                    }
+                    const daysLeft = (eventDate - now) / (1000 * 60 * 60 * 24);
+                    const progress = (1 - daysLeft / 365.25) * 100;
+                    return { progress: progress, value: daysLeft.toFixed(0), unit: 'days', color: '#fbbf24' };
+                }},
+                { id: 'nextChristmas', calculateProgress: (now) => {
+                    const eventDate = getNextAnnualDate(11, 25); // Mes 11 es Diciembre
+                    const daysLeft = (eventDate - now) / (1000 * 60 * 60 * 24);
+                    const progress = (1 - daysLeft / 365.25) * 100;
+                    return { progress: progress, value: daysLeft.toFixed(0), unit: 'days', color: '#ef4444' };
+                }},
+                // Fases lunares
+                { id: 'nextNewMoon', calculateProgress: (now) => {
+                    const start = new Date(2000, 0, 6, 18, 14, 0).getTime();
+                    const synodicPeriod = 29.53059 * 24 * 60 * 60 * 1000;
+                    const elapsed = now.getTime() - start;
+                    const remaining = synodicPeriod - (elapsed % synodicPeriod);
+                    const progress = (elapsed % synodicPeriod) / synodicPeriod * 100;
+                    const daysLeft = remaining / (1000 * 60 * 60 * 24);
+                    return { progress: progress, value: daysLeft.toFixed(0), unit: 'days', color: '#64748b' };
+                }},
+                { id: 'nextWaxingCrescent', calculateProgress: (now) => {
+                    const start = new Date(2000, 0, 6, 18, 14, 0).getTime();
+                    const synodicPeriod = 29.53059 * 24 * 60 * 60 * 1000;
+                    const elapsed = now.getTime() - start;
+                    const progressOffset = (3.7 * 24 * 60 * 60 * 1000);
+                    const remaining = synodicPeriod - ((elapsed - progressOffset) % synodicPeriod);
+                    const progress = ((elapsed - progressOffset) % synodicPeriod) / synodicPeriod * 100;
+                    const daysLeft = remaining / (1000 * 60 * 60 * 24);
+                    return { progress: progress, value: daysLeft.toFixed(0), unit: 'days', color: '#e2e8f0' };
+                }},
+                { id: 'nextFirstQuarter', calculateProgress: (now) => {
+                    const start = new Date(2000, 0, 6, 18, 14, 0).getTime();
+                    const synodicPeriod = 29.53059 * 24 * 60 * 60 * 1000;
+                    const elapsed = now.getTime() - start;
+                    const progressOffset = (7.4 * 24 * 60 * 60 * 1000);
+                    const remaining = synodicPeriod - ((elapsed - progressOffset) % synodicPeriod);
+                    const progress = ((elapsed - progressOffset) % synodicPeriod) / synodicPeriod * 100;
+                    const daysLeft = remaining / (1000 * 60 * 60 * 24);
+                    return { progress: progress, value: daysLeft.toFixed(0), unit: 'days', color: '#cbd5e1' };
+                }},
+                { id: 'nextWaxingGibbous', calculateProgress: (now) => {
+                    const start = new Date(2000, 0, 6, 18, 14, 0).getTime();
+                    const synodicPeriod = 29.53059 * 24 * 60 * 60 * 1000;
+                    const elapsed = now.getTime() - start;
+                    const progressOffset = (11.1 * 24 * 60 * 60 * 1000);
+                    const remaining = synodicPeriod - ((elapsed - progressOffset) % synodicPeriod);
+                    const progress = ((elapsed - progressOffset) % synodicPeriod) / synodicPeriod * 100;
+                    const daysLeft = remaining / (1000 * 60 * 60 * 24);
+                    return { progress: progress, value: daysLeft.toFixed(0), unit: 'days', color: '#94a3b8' };
+                }},
+                { id: 'nextFullMoon', calculateProgress: (now) => {
+                    const start = new Date(2000, 0, 6, 18, 14, 0).getTime();
+                    const synodicPeriod = 29.53059 * 24 * 60 * 60 * 1000;
+                    const elapsed = now.getTime() - start;
+                    const progressOffset = (14.8 * 24 * 60 * 60 * 1000);
+                    const remaining = synodicPeriod - ((elapsed - progressOffset) % synodicPeriod);
+                    const progress = ((elapsed - progressOffset) % synodicPeriod) / synodicPeriod * 100;
+                    const daysLeft = remaining / (1000 * 60 * 60 * 24);
+                    return { progress: progress, value: daysLeft.toFixed(0), unit: 'days', color: '#fcd34d' };
+                }},
+                { id: 'nextWaningGibbous', calculateProgress: (now) => {
+                    const start = new Date(2000, 0, 6, 18, 14, 0).getTime();
+                    const synodicPeriod = 29.53059 * 24 * 60 * 60 * 1000;
+                    const elapsed = now.getTime() - start;
+                    const progressOffset = (18.5 * 24 * 60 * 60 * 1000);
+                    const remaining = synodicPeriod - ((elapsed - progressOffset) % synodicPeriod);
+                    const progress = ((elapsed - progressOffset) % synodicPeriod) / synodicPeriod * 100;
+                    const daysLeft = remaining / (1000 * 60 * 60 * 24);
+                    return { progress: progress, value: daysLeft.toFixed(0), unit: 'days', color: '#374151' };
+                }},
+                { id: 'nextLastQuarter', calculateProgress: (now) => {
+                    const start = new Date(2000, 0, 6, 18, 14, 0).getTime();
+                    const synodicPeriod = 29.53059 * 24 * 60 * 60 * 1000;
+                    const elapsed = now.getTime() - start;
+                    const progressOffset = (22.2 * 24 * 60 * 60 * 1000);
+                    const remaining = synodicPeriod - ((elapsed - progressOffset) % synodicPeriod);
+                    const progress = ((elapsed - progressOffset) % synodicPeriod) / synodicPeriod * 100;
+                    const daysLeft = remaining / (1000 * 60 * 60 * 24);
+                    return { progress: progress, value: daysLeft.toFixed(0), unit: 'days', color: '#1f2937' };
+                }},
+                { id: 'nextWaningCrescent', calculateProgress: (now) => {
+                    const start = new Date(2000, 0, 6, 18, 14, 0).getTime();
+                    const synodicPeriod = 29.53059 * 24 * 60 * 60 * 1000;
+                    const elapsed = now.getTime() - start;
+                    const progressOffset = (25.9 * 24 * 60 * 60 * 1000);
+                    const remaining = synodicPeriod - ((elapsed - progressOffset) % synodicPeriod);
+                    const progress = ((elapsed - progressOffset) % synodicPeriod) / synodicPeriod * 100;
+                    const daysLeft = remaining / (1000 * 60 * 60 * 24);
+                    return { progress: progress, value: daysLeft.toFixed(0), unit: 'days', color: '#0f172a' };
+                }},
+                // Eventos a gran escala
+                { id: 'nextDecade', calculateProgress: (now) => {
+                    const currentDecadeStartYear = Math.floor(now.getFullYear() / 10) * 10;
+                    const startOfDecade = new Date(currentDecadeStartYear, 0, 1);
+                    const yearsPassedDecade = (now - startOfDecade) / (1000 * 60 * 60 * 24 * 365.25);
+                    const progress = (yearsPassedDecade / 10) * 100;
+                    const yearsLeft = 10 - yearsPassedDecade;
+                    return { progress: progress, value: yearsLeft.toFixed(2), unit: 'years', color: '#a78bfa' };
+                }},
+                { id: 'nextCentury', calculateProgress: (now) => {
+                    const currentCenturyStartYear = Math.floor(now.getFullYear() / 100) * 100;
+                    const startOfCentury = new Date(currentCenturyStartYear, 0, 1);
+                    const yearsPassedCentury = (now - startOfCentury) / (1000 * 60 * 60 * 24 * 365.25);
+                    const progress = (yearsPassedCentury / 100) * 100;
+                    const yearsLeft = 100 - yearsPassedCentury;
+                    return { progress: progress, value: yearsLeft.toFixed(2), unit: 'years', color: '#fb923c' };
+                }},
+                { id: 'nextMillennium', calculateProgress: (now) => {
+                    const currentMillenniumStartYear = Math.floor(now.getFullYear() / 1000) * 1000;
+                    const startOfMillennium = new Date(currentMillenniumStartYear, 0, 1);
+                    const yearsPassedMillennium = (now - startOfMillennium) / (1000 * 60 * 60 * 24 * 365.25);
+                    const progress = (yearsPassedMillennium / 1000) * 100;
+                    const yearsLeft = 1000 - yearsPassedMillennium;
+                    return { progress: progress, value: yearsLeft.toFixed(2), unit: 'years', color: '#a855f7' };
+                }},
+                { id: 'halleyComet', calculateProgress: (now) => {
+                    const startDate = new Date(1986, 11, 9);
+                    const endDate = new Date(2061, 6, 28);
+                    const totalDuration = endDate - startDate;
+                    const elapsed = now - startDate;
+                    const progress = (elapsed / totalDuration) * 100;
+                    const yearsLeft = (endDate - now) / (1000 * 60 * 60 * 24 * 365.25);
+                    return { progress: progress, value: yearsLeft.toFixed(2), unit: 'years', color: '#f0abfc' };
+                }},
+                { id: 'chernobylSafe', calculateProgress: (now) => {
+                    const startDate = new Date(1986, 3, 26);
+                    const endDate = new Date(2286, 3, 26);
+                    const totalDuration = endDate - startDate;
+                    const elapsed = now - startDate;
+                    const progress = (elapsed / totalDuration) * 100;
+                    const yearsLeft = (endDate - now) / (1000 * 60 * 60 * 24 * 365.25);
+                    return { progress: progress, value: yearsLeft.toFixed(2), unit: 'years', color: '#4d7c0f' };
+                }},
+                { id: 'voyagerReachesOort', calculateProgress: (now) => {
+                    const startDate = new Date(1977, 8, 5);
+                    const endDate = new Date(2040, 0, 1);
+                    const totalDuration = endDate - startDate;
+                    const elapsed = now - startDate;
+                    const progress = (elapsed / totalDuration) * 100;
+                    const yearsLeft = (endDate - now) / (1000 * 60 * 60 * 24 * 365.25);
+                    return { progress: progress, value: yearsLeft.toFixed(2), unit: 'years', color: '#166534' };
+                }},
+                { id: 'milkyWayCollision', calculateProgress: (now) => {
+                    const startDate = new Date();
+                    const endDate = new Date(startDate.getFullYear() + 4e9, 0, 1);
+                    const totalDuration = endDate - startDate;
+                    const elapsed = now - startDate;
+                    const progress = (elapsed / totalDuration) * 100;
+                    const yearsLeft = (endDate - now) / (1000 * 60 * 60 * 24 * 365.25);
+                    return { progress: progress, value: yearsLeft.toFixed(0), unit: 'billions', color: '#6d28d9' };
+                }},
+                { id: 'sunDies', calculateProgress: (now) => {
+                    const startDate = new Date();
+                    const endDate = new Date(startDate.getFullYear() + 5e9, 0, 1);
+                    const totalDuration = endDate - startDate;
+                    const elapsed = now - startDate;
+                    const progress = (elapsed / totalDuration) * 100;
+                    const yearsLeft = (endDate - now) / (1000 * 60 * 60 * 24 * 365.25);
+                    return { progress: progress, value: yearsLeft.toFixed(0), unit: 'billions', color: '#991b1b' };
+                }},
+                { id: 'heatDeath', calculateProgress: (now) => {
+                    return { progress: 0, value: 'billions', unit: 'billions', color: '#0f172a' };
+                }},
+            ];
+
+            // Función para crear y añadir un elemento de barra de progreso
+            function createProgressElement(item) {
+                const container = document.createElement('div');
+                container.classList.add('flex', 'flex-col', 'space-y-1', 'mb-6');
+                container.setAttribute('id', `progress-${item.id}`);
+                const barWrapper = document.createElement('div');
+                barWrapper.classList.add('bg-gray-700', 'rounded-full', 'overflow-hidden', 'p-1', 'shadow-inner');
+                const fillElement = document.createElement('div');
+                fillElement.classList.add('progress-bar-fill', 'h-6', 'rounded-full');
+                fillElement.style.width = '0%';
+                barWrapper.appendChild(fillElement);
+                const infoWrapper = document.createElement('div');
+                infoWrapper.classList.add('flex', 'justify-between', 'items-center', 'text-sm', 'font-semibold', 'mt-2');
+                const titleElement = document.createElement('span');
+                titleElement.classList.add('progress-title');
+                const valueElement = document.createElement('span');
+                valueElement.classList.add('progress-value');
+                infoWrapper.appendChild(titleElement);
+                infoWrapper.appendChild(valueElement);
+                container.appendChild(barWrapper);
+                container.appendChild(infoWrapper);
+                progressContainer.appendChild(container);
+                return { fillElement, valueElement };
+            }
+
+            // Mapeo de los elementos del DOM para un acceso rápido
+            const progressElements = {};
+            progressItems.forEach(item => {
+                progressElements[item.id] = createProgressElement(item);
+            });
+
+            // Función para calcular y actualizar las barras de progreso
+            function updateProgressBars() {
+                const now = new Date();
+                progressItems.forEach(item => {
+                    const { progress, value, unit, color } = item.calculateProgress(now);
+                    const elements = progressElements[item.id];
+                    
+                    if (elements) {
+                        elements.fillElement.style.width = `${progress}%`;
+                        elements.fillElement.style.backgroundColor = color;
+                        const translatedUnit = locales[currentLang].units[unit] || unit;
+                        elements.valueElement.textContent = `${value} ${translatedUnit}`;
+                        
+                        const translatedTitle = locales[currentLang].titles[item.id] || item.title;
+                        elements.fillElement.closest('.flex.flex-col').querySelector('.progress-title').textContent = translatedTitle;
+                    }
+                });
+            }
+
+            // Lógica del juego de dibujo
+            let drawing = false;
+            let points = [];
+            let ctx = null; // Inicializar en null y obtener el contexto al iniciar el juego
+            
+            // Función para iniciar el dibujo
+            function startDrawing(e) {
+                e.preventDefault();
+                drawing = true;
+                points = [];
+                // Se limpia el lienzo al empezar a dibujar
+                if (ctx) {
+                    ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+                    ctx.beginPath();
+                    const pos = getCanvasPos(e);
+                    ctx.moveTo(pos.x, pos.y);
+                    points.push(pos);
+                }
+            }
+
+            // Función para dibujar
+            function draw(e) {
+                if (!drawing) return;
+                e.preventDefault();
+                const pos = getCanvasPos(e);
+                points.push(pos);
+
+                if (ctx) {
+                    // Calcule la perfección a medida que se dibuja
+                    const score = calculateLiveScore();
+                    // Determine el color de la línea
+                    const hue = Math.max(0, Math.min(120, score * 1.2)); // Mapear 0-100 a 0-120 (rojo a verde)
+                    ctx.strokeStyle = `hsl(${hue}, 100%, 50%)`;
+                    ctx.lineWidth = 4;
+                    
+                    // Dibuja el siguiente segmento de la línea
+                    ctx.lineTo(pos.x, pos.y);
+                    ctx.stroke();
+                }
+            }
+
+            // Función para detener el dibujo
+            function stopDrawing() {
+                if (!drawing) return;
+                drawing = false;
+                if (ctx) {
+                    ctx.closePath();
+                }
+                // Mostrar el score final y el mensaje al detener el dibujo
+                const score = calculateLiveScore();
+                displayFinalScore(score);
+            }
+
+            // Obtener la posición del cursor/toque en el canvas
+            function getCanvasPos(e) {
+                const rect = drawingCanvas.getBoundingClientRect();
+                let x, y;
+                if (e.touches) {
+                    x = e.touches[0].clientX - rect.left;
+                    y = e.touches[0].clientY - rect.top;
+                } else {
+                    x = e.clientX - rect.left;
+                    y = e.clientY - rect.top;
+                }
+                const scaleX = drawingCanvas.width / rect.width;
+                const scaleY = drawingCanvas.height / rect.height;
+                return { x: x * scaleX, y: y * scaleY };
+            }
+
+            // Calcula el score en tiempo real mientras se dibuja
+            function calculateLiveScore() {
+                if (points.length < 10) return 0;
+                
+                // Calcular el centroide
+                const centroid = points.reduce((acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }), { x: 0, y: 0 });
+                centroid.x /= points.length;
+                centroid.y /= points.length;
+
+                // Calcular las distancias de cada punto al centroide
+                const distances = points.map(p => Math.sqrt(Math.pow(p.x - centroid.x, 2) + Math.pow(p.y - centroid.y, 2)));
+
+                // Calcular el radio promedio
+                const avgRadius = distances.reduce((sum, d) => sum + d, 0) / distances.length;
+                
+                // Calcular la desviación estándar para determinar la "perfección"
+                const sumOfSquares = distances.reduce((sum, d) => sum + Math.pow(d - avgRadius, 2), 0);
+                const stdDev = Math.sqrt(sumOfSquares / distances.length);
+
+                // Calcular el score basado en la desviación estándar
+                let score = Math.max(0, 100 - (stdDev / avgRadius) * 100);
+                return Math.min(100, score);
+            }
+
+            // Muestra el score final y el mensaje
+            function displayFinalScore(score) {
+                // Determine el mensaje basado en el score
+                let message;
+                if (score > 95) {
+                    message = locales[currentLang].drawing.messages.excellent;
+                } else if (score > 80) {
+                    message = locales[currentLang].drawing.messages.great;
+                } else if (score > 60) {
+                    message = locales[currentLang].drawing.messages.good;
+                } else if (score > 40) {
+                    message = locales[currentLang].drawing.messages.fair;
+                } else {
+                    message = locales[currentLang].drawing.messages.poor;
+                }
+
+                scoreElement.textContent = `${score.toFixed(1)}%`;
+                messageElement.textContent = message;
+            }
+
+            // Lógica para el fondo animado
+            const colors = ['#fde047', '#4ade80', '#22d3ee', '#ef4444', '#f97316'];
+            let currentLineCount = 0;
+            let lineInterval;
+
+            function createAnimatedLine() {
+                if (currentLineCount >= 10) return; // Limitar el número de líneas
+
+                const line = document.createElement('div');
+                line.classList.add('animated-line');
+                const size = Math.random() * 200 + 100;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const startDelay = Math.random() * 2;
+                const duration = Math.random() * 4 + 3;
+
+                line.style.width = `${size}px`;
+                line.style.height = `${size}px`;
+                line.style.border = `4px solid ${color}`;
+                line.style.animationDelay = `${startDelay}s`;
+                line.style.animationDuration = `${duration}s`;
+                line.style.animationTimingFunction = 'ease-in-out';
+                backgroundLinesContainer.appendChild(line);
+
+                currentLineCount++;
+
+                // Eliminar la línea después de que termine la animación
+                setTimeout(() => {
+                    line.remove();
+                    currentLineCount--;
+                }, (duration * 1000) + (startDelay * 1000));
+            }
+            
+            function startBackgroundAnimation() {
+                // Crear líneas iniciales para que la pantalla no esté vacía
+                for (let i = 0; i < 5; i++) {
+                    createAnimatedLine();
+                }
+                // Generar nuevas líneas en un intervalo
+                lineInterval = setInterval(createAnimatedLine, 2000);
+            }
+            
+            function stopBackgroundAnimation() {
+                clearInterval(lineInterval);
+                // Opcional: limpiar todas las líneas
+                // backgroundLinesContainer.innerHTML = '';
+            }
+
+            // Event listener del botón "GO"
+            startDrawingButton.addEventListener('click', () => {
+                const drawingGamePage = document.getElementById('drawing-game-page');
+                
+                // Ocultar la pantalla de inicio y mostrar el juego real
+                startScreen.classList.add('hidden');
+                drawingGamePlay.classList.remove('hidden');
+                
+                // Detener la animación del fondo
+                stopBackgroundAnimation();
+                
+                // Mostrar el lienzo de dibujo real y el punto central, y empezar a escuchar eventos
+                drawingCanvas.classList.remove('hidden');
+                drawingCanvas.width = drawingCanvas.offsetWidth;
+                drawingCanvas.height = drawingCanvas.offsetHeight;
+                centerDot.classList.remove('hidden');
+
+                // Obtener el contexto del canvas una vez que sea visible
+                ctx = drawingCanvas.getContext('2d');
+            });
+            
+            // Event listeners del lienzo para mouse y touch (para el lienzo activo)
+            drawingCanvas.addEventListener('mousedown', startDrawing);
+            drawingCanvas.addEventListener('mousemove', draw);
+            drawingCanvas.addEventListener('mouseup', stopDrawing);
+            drawingCanvas.addEventListener('mouseleave', stopDrawing);
+            drawingCanvas.addEventListener('touchstart', startDrawing);
+            drawingCanvas.addEventListener('touchmove', draw);
+            drawingCanvas.addEventListener('touchend', stopDrawing);
+
+            // Llama a las funciones de inicialización
+            updateProgressBars();
+            setInterval(updateProgressBars, 100);
+            // Iniciar la animación del fondo al cargar la página
+            startBackgroundAnimation();
+        });
+    </script>
+</body>
+</html>
